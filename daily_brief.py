@@ -71,6 +71,7 @@ def generate_script(raw_text):
     3. Relevance: Emphasize in particular 1) anything related to CNS, neurology, or interesting novel modalities (top priority), 2) anything related to microscopy or imaging (if present) and 3) anything related to mRNA, XNA, glycans, or nucleic acid therapies.
     4. Structure: Start with "Good morning. Here is your Fierce Biotech update for (insert today's date)." End with "That's the roundup."
     5. Do not read lists. Weave the stories into a narrative.
+    6. Length should be at least 1000 words.
     """
 
     response = client.chat.completions.create(
@@ -166,5 +167,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
