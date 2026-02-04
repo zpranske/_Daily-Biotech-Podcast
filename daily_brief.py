@@ -50,40 +50,62 @@ def get_latest_email():
     return None
     
 def extract_article_links(html_content):
-    """DIAGNOSTIC VERSION: Prints raw data to debug link extraction."""
+    """Parses email HTML, unwraps security/tracking links to find real articles."""
     soup = BeautifulSoup(html_content, "html.parser")
-    all_links = soup.find_all('a', href=True)
-    
-    print(f"\n--- DEBUG START ---")
-    print(f"HTML Snippet (First 500 chars): {str(html_content)[:500]}")
-    print(f"Total <a> tags with href found: {len(all_links)}")
-    
     links = []
     
-    for i, a in enumerate(all_links):
-        href = a['href']
-        
-        # PRINT THE FIRST 10 RAW LINKS so we can see the pattern
-        if i < 10:
-            print(f"LINK #{i}: {href}")
+    # We use a session for faster connection reuse
+    session = requests.Session()
+    session.headers.update({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
 
-        # Try to decode URLDefense (Standard V3 regex)
+    print("Scanning links and resolving redirects (this may take 10-20 seconds)...")
+
+    # Get all candidate links
+    all_tags = soup.find_all('a', href=True)
+    
+    for i, a in enumerate(all_tags):
+        href = a['href']
+        text = a.get_text().strip()
+
+        # 1. DECODE URLDEFENSE (Security Wrapper)
         if "urldefense" in href:
             match = re.search(r'__(.*?)__', href)
             if match:
-                decoded = match.group(1)
-                if i < 10: print(f"   -> DECODED V3: {decoded}")
-                href = decoded
-            else:
-                # If regex fails, print why
-                if i < 10: print(f"   -> FAILED TO DECODE V3 (No underscores found)")
+                href = match.group(1)
+        
+        # 2. RESOLVE TRACKING LINKS (e.g., omeclk.com)
+        # We only try to resolve if it looks like the specific tracker found in logs
+        if "omeclk.com" in href or "fierce" in href:
+            try:
+                # We perform a HEAD request which follows redirects but doesn't download body
+                # This is much faster than downloading the page
+                if "omeclk.com" in href:
+                    response = session.head(href, allow_redirects=True, timeout=5)
+                    final_url = response.url
+                else:
+                    final_url = href
+                
+                # 3. FILTER FOR RELEVANT CONTENT
+                # We look for /biotech/ in the final resolved URL
+                if "fiercebiotech.com" in final_url and "/biotech/" in final_url:
+                    print(f"   -> FOUND ARTICLE: {final_url}")
+                    links.append(final_url)
+                
+            except Exception as e:
+                # Sometmes HEAD fails on strict servers, retry with GET
+                try:
+                    response = session.get(href, allow_redirects=True, timeout=5, stream=True)
+                    final_url = response.url
+                    if "fiercebiotech.com" in final_url and "/biotech/" in final_url:
+                        print(f"   -> FOUND ARTICLE (via GET): {final_url}")
+                        links.append(final_url)
+                except:
+                    print(f"   -> Failed to resolve link: {href[:50]}...")
+                    continue
 
-        # Filter logic
-        if "fiercebiotech.com" in href and "biotech/" in href:
-            links.append(href)
-            
+    # Remove duplicates and limit to top 5 stories
     unique_links = list(set(links))
-    print(f"--- DEBUG END ---\n")
+    print(f"DEBUG: Final list has {len(unique_links)} articles.")
     return unique_links[:5]
 
 def scrape_article_text(url):
@@ -190,6 +212,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
