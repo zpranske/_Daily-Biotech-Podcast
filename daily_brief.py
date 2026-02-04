@@ -25,9 +25,9 @@ def get_latest_articles_from_rss():
         return []
     
     links = []
-    print(f"Found {len(feed.entries)} entries. Grabbing top 10...")
+    print(f"Found {len(feed.entries)} entries. Grabbing top 20...")
     
-    for entry in feed.entries[:10]:
+    for entry in feed.entries[:20]:
         print(f" - Found: {entry.title}")
         links.append(entry.link)
         
@@ -70,7 +70,8 @@ def generate_clean_script(raw_text):
     3. Relevance: Emphasize in particular 1) anything related to CNS, neurology, or interesting novel modalities (top priority), 2) anything related to microscopy or imaging (if present) and 3) anything related to mRNA, XNA, glycans, or nucleic acid therapies.
     4. Structure: Start with "Good morning. Here is your Fierce Biotech update for (insert today's date)." End with "That's the roundup."
     5. Do not read lists. Weave the stories into a narrative.
-    6. Length should be at least 1000 words.
+    6. You do not need to summarize every single story. Pick the 8-10 most relevant and/or impactful.
+    7. Length should be at least 1000 words.
     """
 
     response = client.chat.completions.create(
@@ -242,6 +243,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
