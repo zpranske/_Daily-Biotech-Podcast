@@ -112,6 +112,7 @@ def optimize_script_for_audio(script_text):
     EXAMPLES:
     - "$2-4 billion" -> "two to four billion dollars"
     - "LY388496324" (a drug candidate that's too early-stage to have a name) -> "LY3884 for short" (the first time it's read) or "LY3884" (subsequent times)
+    - When you see something like "stiff person syndrome (SPS)", add a comma after "stiff person syndrome"
     
     Output the full script with these modifications. Do not change the sentence structure or content.
     """
@@ -241,6 +242,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
