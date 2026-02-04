@@ -11,7 +11,6 @@ OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
 TELEGRAM_CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
 
-# Fierce Biotech RSS Feed URL
 RSS_URL = "https://www.fiercebiotech.com/rss/biotech/xml"
 
 client = OpenAI(api_key=OPENAI_API_KEY)
@@ -26,9 +25,9 @@ def get_latest_articles_from_rss():
         return []
     
     links = []
-    print(f"Found {len(feed.entries)} entries. Grabbing top 10...")
+    print(f"Found {len(feed.entries)} entries. Grabbing top 5...")
     
-    for entry in feed.entries[:10]:
+    for entry in feed.entries[:5]:
         print(f" - Found: {entry.title}")
         links.append(entry.link)
         
@@ -54,8 +53,8 @@ def scrape_article_text(url):
         print(f"Error scraping {url}: {e}")
         return ""
 
-def generate_script(raw_text):
-    """Uses GPT-4o to synthesize the podcast script."""
+def generate_clean_script(raw_text):
+    """Generates the readable text script for the user."""
     if not raw_text.strip():
         return "No news found today."
 
@@ -83,18 +82,45 @@ def generate_script(raw_text):
     )
     return response.choices[0].message.content
 
-def text_to_speech(script):
-    """Generates MP3 using OpenAI TTS (Handles scripts longer than 4096 chars)."""
+def optimize_script_for_audio(script_text):
+    """Rewrites acronyms phonetically so TTS pronounces them correctly."""
     
-    # OpenAI TTS has a strict 4096 character limit.
-    # We split the script into chunks if it exceeds this.
+    print("Optimizing script for TTS pronunciation...")
+    
+    system_prompt = """
+    You are a Voice-Over Assistant. Your job is to format text for a Text-to-Speech engine.
+    
+    RULE: Identify scientific acronyms and rewrite them based on how they should be spoken.
+    
+    EXAMPLES:
+    - "GABA" -> "GABA" (Pronounced as a word)
+    - "CRISPR" -> "CRISPR" (Pronounced as a word)
+    - "FAAH" -> "F-A-A-H" (Read as letters)
+    - "scRNA" -> "s-c-RNA" (Read as letters)
+    - "AAV" -> "A-A-V"
+    - "EGFR" -> "E-G-F-R"
+    - "GABAR" -> "Gaba-R"
+    
+    Output the full script with these modifications. Do not change the sentence structure or content.
+    """
+
+    response = client.chat.completions.create(
+        model="gpt-5.1",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": script_text}
+        ]
+    )
+    return response.choices[0].message.content
+
+def text_to_speech(script):
+    """Generates MP3 using OpenAI TTS (Handles long scripts)."""
     max_length = 4096
     chunks = []
     
     if len(script) > max_length:
         print(f"Script is long ({len(script)} chars). Splitting into chunks...")
         current_chunk = ""
-        # Split by paragraphs to keep natural pauses
         for paragraph in script.split("\n"):
             if len(current_chunk) + len(paragraph) + 1 < max_length:
                 current_chunk += paragraph + "\n"
@@ -108,7 +134,6 @@ def text_to_speech(script):
 
     output_filename = "daily_update.mp3"
     
-    # Open the file in 'append binary' mode to stitch chunks together
     with open(output_filename, "wb") as f:
         for i, chunk in enumerate(chunks):
             if not chunk.strip(): continue
@@ -116,15 +141,12 @@ def text_to_speech(script):
             print(f"Synthesizing audio part {i+1}/{len(chunks)}...")
             try:
                 response = client.audio.speech.create(
-                    model="tts-1",
-                    voice="onyx", 
+                    model="tts-1-hd",
+                    voice="alloy", 
                     input=chunk
                 )
-                
-                # Write the audio bytes directly to the file
                 for audio_data in response.iter_bytes():
                     f.write(audio_data)
-                    
             except Exception as e:
                 print(f"Error on chunk {i+1}: {e}")
 
@@ -164,7 +186,7 @@ def send_via_telegram(audio_file, text_file):
         print(f"❌ Error sending transcript: {e}")
 
 def main():
-    # 1. Get Links (RSS)
+    # 1. Get Links
     links = get_latest_articles_from_rss()
     if not links:
         print("No articles found. Exiting.")
@@ -183,30 +205,27 @@ def main():
         print("Scraped content is empty. Stopping.")
         return
 
-    # 3. Generate Script
-    print("Generating script with AI...")
-    script = generate_script(full_content)
+    # 3. Generate CLEAN Script (For Humans)
+    print("Generating clean script...")
+    clean_script = generate_clean_script(full_content)
     
-    # --- NEW: Save Script to File ---
+    # Save Readable Transcript
     transcript_filename = "daily_brief.txt"
     with open(transcript_filename, "w", encoding="utf-8") as f:
-        f.write(script)
-    print("Transcript saved.")
+        f.write(clean_script)
+    print("Clean transcript saved.")
     
-    # 4. Generate Audio
+    # 4. Generate PHONETIC Script (For Robots)
+    audio_script = optimize_script_for_audio(clean_script)
+    
+    # 5. Generate Audio from Phonetic Script
     print("Synthesizing audio...")
-    audio_path = text_to_speech(script)
+    audio_path = text_to_speech(audio_script)
     
-    # 5. Send Both
+    # 6. Send clean text and phonetic audio
     print("Sending to Telegram...")
     send_via_telegram(audio_path, transcript_filename)
     print("Done!")
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
