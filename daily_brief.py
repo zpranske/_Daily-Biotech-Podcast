@@ -26,9 +26,9 @@ def get_latest_articles_from_rss():
         return []
     
     links = []
-    print(f"Found {len(feed.entries)} entries. Grabbing top 5...")
+    print(f"Found {len(feed.entries)} entries. Grabbing top 10...")
     
-    for entry in feed.entries[:5]:
+    for entry in feed.entries[:10]:
         # RSS links are clean (no tracking wrappers!)
         print(f" - Found: {entry.title}")
         links.append(entry.link)
@@ -66,14 +66,14 @@ def generate_script(raw_text):
     You are an expert biotech analyst briefing a Neurobiologist. 
     The user understands deep science (MOAs, pathways, receptors) but is unfamiliar with 'industry' terms (IPOs, Series B, PBMs, commercialization cliffs).
     
-    Your Goal: Summarize these news items into a 5-minute spoken-word podcast script.
+    Your Goal: Summarize these news items into a 10-minute spoken-word podcast script (~1000-1500 words).
     
     Guidelines:
     1. Tone: Professional, slightly conversational, high-level intellectual.
     2. Translation: If a story is about a 'Series B raise', explain *what specific mechanism* or *target* that money will fund.
-    3. Relevance: Highlight anything related to CNS, neurology, or interesting novel modalities.
-    4. Structure: Start with "Good morning. Here is your Fierce Biotech update." End with "That's the roundup."
-    5. Do not read lists. Weave the stories into a narrative.
+    3. Relevance: Highlight anything related to CNS, neurology, or interesting novel modalities first, then consider other adjacent fields.
+    4. Structure: Start with "Good morning. Here is your Fierce Biotech update for [today's date]." End with "That's the roundup. Go kick some ass, Boss Man."
+    5. Do not read lists. Weave the stories into a narrative. 
     """
 
     response = client.chat.completions.create(
@@ -89,7 +89,7 @@ def text_to_speech(script):
     """Generates MP3 using OpenAI TTS."""
     response = client.audio.speech.create(
         model="tts-1",
-        voice="onyx", 
+        voice="nova", 
         input=script
     )
     response.stream_to_file("daily_update.mp3")
@@ -155,5 +155,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
