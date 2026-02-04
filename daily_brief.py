@@ -11,7 +11,7 @@ OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
 TELEGRAM_CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
 
-# Fierce Biotech RSS Feed URL (The "Golden Source")
+# Fierce Biotech RSS Feed URL
 RSS_URL = "https://www.fiercebiotech.com/rss/biotech/xml"
 
 client = OpenAI(api_key=OPENAI_API_KEY)
@@ -29,7 +29,6 @@ def get_latest_articles_from_rss():
     print(f"Found {len(feed.entries)} entries. Grabbing top 5...")
     
     for entry in feed.entries[:5]:
-        # RSS links are clean (no tracking wrappers!)
         print(f" - Found: {entry.title}")
         links.append(entry.link)
         
@@ -38,14 +37,12 @@ def get_latest_articles_from_rss():
 def scrape_article_text(url):
     """Visits the link and scrapes the body text."""
     try:
-        # Standard browser header to avoid being blocked by the site itself
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         }
         response = requests.get(url, headers=headers, timeout=10)
         soup = BeautifulSoup(response.content, "html.parser")
         
-        # Fierce Biotech articles usually allow scrapping p tags
         paragraphs = soup.find_all('p')
         text = " ".join([p.get_text() for p in paragraphs])
         
@@ -66,14 +63,14 @@ def generate_script(raw_text):
     You are an expert biotech analyst briefing a Neurobiologist. 
     The user understands deep science (MOAs, pathways, receptors) but is unfamiliar with 'industry' terms (IPOs, Series B, PBMs, commercialization cliffs).
     
-    Your Goal: Summarize these news items into a 10-minute spoken-word podcast script (~1000-1500 words).
+    Your Goal: Summarize these news items into a 5-minute spoken-word podcast script.
     
     Guidelines:
     1. Tone: Professional, slightly conversational, high-level intellectual.
     2. Translation: If a story is about a 'Series B raise', explain *what specific mechanism* or *target* that money will fund.
-    3. Relevance: Highlight anything related to CNS, neurology, or interesting novel modalities first, then consider other adjacent fields.
-    4. Structure: Start with "Good morning. Here is your Fierce Biotech update for [today's date]." End with "That's the roundup. Go kick some ass, Boss Man."
-    5. Do not read lists. Weave the stories into a narrative. 
+    3. Relevance: Highlight anything related to CNS, neurology, or interesting novel modalities.
+    4. Structure: Start with "Good morning. Here is your Fierce Biotech update." End with "That's the roundup."
+    5. Do not read lists. Weave the stories into a narrative.
     """
 
     response = client.chat.completions.create(
@@ -89,36 +86,44 @@ def text_to_speech(script):
     """Generates MP3 using OpenAI TTS."""
     response = client.audio.speech.create(
         model="tts-1",
-        voice="nova", 
+        voice="onyx", 
         input=script
     )
     response.stream_to_file("daily_update.mp3")
     return "daily_update.mp3"
 
-def send_via_telegram(audio_file):
-    """Pushes the audio file to your phone and prints the server response."""
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendAudio"
+def send_via_telegram(audio_file, text_file):
+    """Pushes the audio file AND the transcript to your phone."""
+    url_audio = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendAudio"
+    url_doc = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendDocument"
     
     print(f"Attempting to send to Chat ID: {TELEGRAM_CHAT_ID}")
     
-    with open(audio_file, 'rb') as audio:
-        payload = {'chat_id': TELEGRAM_CHAT_ID, 'title': f"Daily Biotech Update {datetime.date.today()}"}
-        files = {'audio': audio}
-        
-        try:
-            response = requests.post(url, data=payload, files=files, timeout=30)
-            
-            # Print the raw response from Telegram
-            print(f"Telegram Response Code: {response.status_code}")
-            print(f"Telegram Response Body: {response.text}")
-            
-            if response.status_code == 200:
-                print("✅ Success! Message sent.")
+    # 1. Send Audio
+    try:
+        with open(audio_file, 'rb') as audio:
+            payload = {'chat_id': TELEGRAM_CHAT_ID, 'title': f"Biotech Update {datetime.date.today()}"}
+            files = {'audio': audio}
+            r = requests.post(url_audio, data=payload, files=files, timeout=30)
+            if r.status_code == 200:
+                print("✅ Audio sent successfully.")
             else:
-                print("❌ Failed! Check the error message above.")
-                
-        except Exception as e:
-            print(f"❌ Error during connection: {e}")
+                print(f"❌ Audio failed: {r.text}")
+    except Exception as e:
+        print(f"❌ Error sending audio: {e}")
+
+    # 2. Send Transcript
+    try:
+        with open(text_file, 'rb') as doc:
+            payload = {'chat_id': TELEGRAM_CHAT_ID, 'caption': f"Transcript {datetime.date.today()}"}
+            files = {'document': doc}
+            r = requests.post(url_doc, data=payload, files=files, timeout=30)
+            if r.status_code == 200:
+                print("✅ Transcript sent successfully.")
+            else:
+                print(f"❌ Transcript failed: {r.text}")
+    except Exception as e:
+        print(f"❌ Error sending transcript: {e}")
 
 def main():
     # 1. Get Links (RSS)
@@ -144,18 +149,20 @@ def main():
     print("Generating script with AI...")
     script = generate_script(full_content)
     
+    # --- NEW: Save Script to File ---
+    transcript_filename = "daily_brief.txt"
+    with open(transcript_filename, "w", encoding="utf-8") as f:
+        f.write(script)
+    print("Transcript saved.")
+    
     # 4. Generate Audio
     print("Synthesizing audio...")
     audio_path = text_to_speech(script)
     
-    # 5. Send
+    # 5. Send Both
     print("Sending to Telegram...")
-    send_via_telegram(audio_path)
+    send_via_telegram(audio_path, transcript_filename)
     print("Done!")
 
 if __name__ == "__main__":
     main()
-
-
-
-
