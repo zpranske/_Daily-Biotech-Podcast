@@ -50,63 +50,70 @@ def get_latest_email():
     return None
     
 def extract_article_links(html_content):
-    """Parses email HTML, unwraps security/tracking links to find real articles."""
+    """DEEP PROBE DIAGNOSTIC: Prints the journey of the first 5 links."""
     soup = BeautifulSoup(html_content, "html.parser")
-    links = []
+    all_links = soup.find_all('a', href=True)
     
-    # We use a session for faster connection reuse
     session = requests.Session()
-    session.headers.update({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+    # Pretend to be a real Chrome browser to avoid being blocked
+    session.headers.update({
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+    })
 
-    print("Scanning links and resolving redirects (this may take 10-20 seconds)...")
-
-    # Get all candidate links
-    all_tags = soup.find_all('a', href=True)
+    print(f"\n--- DEEP PROBE START (Checking first 5 links) ---")
     
-    for i, a in enumerate(all_tags):
-        href = a['href']
-        text = a.get_text().strip()
-
-        # 1. DECODE URLDEFENSE (Security Wrapper)
-        if "urldefense" in href:
-            match = re.search(r'__(.*?)__', href)
-            if match:
-                href = match.group(1)
+    final_links = []
+    
+    # We only check the first 5 unique links to save time/logs
+    checked_count = 0
+    
+    for a in all_links:
+        if checked_count >= 5: break
         
-        # 2. RESOLVE TRACKING LINKS (e.g., omeclk.com)
-        # We only try to resolve if it looks like the specific tracker found in logs
-        if "omeclk.com" in href or "fierce" in href:
-            try:
-                # We perform a HEAD request which follows redirects but doesn't download body
-                # This is much faster than downloading the page
-                if "omeclk.com" in href:
-                    response = session.head(href, allow_redirects=True, timeout=5)
-                    final_url = response.url
-                else:
-                    final_url = href
-                
-                # 3. FILTER FOR RELEVANT CONTENT
-                # We look for /biotech/ in the final resolved URL
-                if "fiercebiotech.com" in final_url and "/biotech/" in final_url:
-                    print(f"   -> FOUND ARTICLE: {final_url}")
-                    links.append(final_url)
-                
-            except Exception as e:
-                # Sometmes HEAD fails on strict servers, retry with GET
-                try:
-                    response = session.get(href, allow_redirects=True, timeout=5, stream=True)
-                    final_url = response.url
-                    if "fiercebiotech.com" in final_url and "/biotech/" in final_url:
-                        print(f"   -> FOUND ARTICLE (via GET): {final_url}")
-                        links.append(final_url)
-                except:
-                    print(f"   -> Failed to resolve link: {href[:50]}...")
-                    continue
+        raw_href = a['href']
+        
+        # skip obvious junk
+        if any(x in raw_href for x in ["unsubscribe", "preference"]): continue
+        
+        print(f"\nLINK #{checked_count + 1}")
+        print(f"  [1] Raw: {raw_href[:80]}...")
 
-    # Remove duplicates and limit to top 5 stories
-    unique_links = list(set(links))
-    print(f"DEBUG: Final list has {len(unique_links)} articles.")
-    return unique_links[:5]
+        # STEP 1: UNWRAP URLDEFENSE
+        working_url = raw_href
+        if "urldefense" in raw_href:
+            match = re.search(r'__(.*?)__', raw_href)
+            if match:
+                working_url = match.group(1)
+                print(f"  [2] Unwrapped: {working_url[:80]}...")
+            else:
+                print(f"  [!] Failed to unwrap URLDefense")
+                continue
+
+        # STEP 2: RESOLVE REDIRECT (The moment of truth)
+        try:
+            # We try GET instead of HEAD because some trackers block HEAD
+            response = session.get(working_url, allow_redirects=True, timeout=10, stream=True)
+            final_url = response.url
+            status_code = response.status_code
+            
+            print(f"  [3] Status: {status_code}")
+            print(f"  [4] Landed at: {final_url}")
+            
+            # STEP 3: CHECK MATCH
+            if "fiercebiotech.com" in final_url:
+                print("  [✓] MATCH! This is a valid article.")
+                final_links.append(final_url)
+            else:
+                print("  [X] No match (Not fiercebiotech.com)")
+                
+        except Exception as e:
+            print(f"  [!] CRASH during resolution: {e}")
+
+        checked_count += 1
+
+    print(f"\n--- DEEP PROBE END ---\n")
+    return final_links
 
 def scrape_article_text(url):
     """Visits the link and scrapes the body text."""
@@ -212,6 +219,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
