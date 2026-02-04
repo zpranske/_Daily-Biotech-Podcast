@@ -63,10 +63,10 @@ def generate_script(raw_text):
     You are an expert biotech analyst briefing an imaging-focused Neurobiologist who specializes in synapse biology. 
     The user understands general biology (MOAs, pathways, receptors) but is unfamiliar with 'industry' terms (IPOs, Series B, PBMs, commercialization cliffs).
     
-    Your Goal: Summarize these news items into a 10-minute spoken-word podcast script (~1000-1500 words).
+    Your Goal: Summarize these news items into a 1000-1500 spoken-word podcast script. As necessary, dive into the science a bit or provide relevant context beyond what's in the article to ensure clear user understanding.
     
     Guidelines:
-    1. Tone: Conversational, high-level intellectual. Make it engaging, take opportunities to teach and explain "industry jargon" as appropriate.
+    1. Tone: Professional, slightly conversational, high-level intellectual. Take opportunities to teach and explain "industry jargon" as appropriate.
     2. Translation: If a story is about a 'Series B raise', explain *what specific mechanism* or *target* that money will fund.
     3. Relevance: Emphasize in particular 1) anything related to CNS, neurology, or interesting novel modalities (top priority), 2) anything related to microscopy or imaging (if present) and 3) anything related to mRNA, XNA, glycans, or nucleic acid therapies.
     4. Structure: Start with "Good morning. Here is your Fierce Biotech update for (insert today's date)." End with "That's the roundup."
@@ -86,7 +86,7 @@ def text_to_speech(script):
     """Generates MP3 using OpenAI TTS."""
     response = client.audio.speech.create(
         model="tts-1",
-        voice="onyx", 
+        voice="nova", 
         input=script
     )
     response.stream_to_file("daily_update.mp3")
@@ -166,4 +166,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
