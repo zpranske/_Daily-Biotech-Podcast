@@ -29,16 +29,19 @@ def get_latest_email():
     mail.login(EMAIL_USER, EMAIL_PASS)
     mail.select("inbox")
 
-    # Search for emails from Fierce Biotech in the last 24h
-    date = (datetime.date.today() - datetime.timedelta(days=1)).strftime("%d-%b-%Y")
-    status, messages = mail.search(None, f'(FROM "Fierce Biotech" SINCE "{date}")')
+    # Search for emails from the specific address in the last 3 days
+    # We use 3 days to ensure the test works even if today's email is late
+    date = (datetime.date.today() - datetime.timedelta(days=3)).strftime("%d-%b-%Y")
+    
+    # Updated search query using the specific email address
+    status, messages = mail.search(None, f'(FROM "editors@go.fiercebiotech.com" SINCE "{date}")')
     
     email_ids = messages[0].split()
     if not email_ids:
-        print("No emails found.")
+        print(f"No emails found from editors@go.fiercebiotech.com since {date}.")
         return None
 
-    # Fetch the latest one
+    # Fetch the latest one (last in the list)
     status, msg_data = mail.fetch(email_ids[-1], "(RFC822)")
     for response_part in msg_data:
         if isinstance(response_part, tuple):
@@ -147,4 +150,5 @@ def main():
     print("Done!")
 
 if __name__ == "__main__":
+
     main()
