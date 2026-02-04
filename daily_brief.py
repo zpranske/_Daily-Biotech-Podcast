@@ -50,44 +50,40 @@ def get_latest_email():
     return None
     
 def extract_article_links(html_content):
-    """Parses email HTML to find article links (Handles Proofpoint/URLDefense)."""
+    """DIAGNOSTIC VERSION: Prints raw data to debug link extraction."""
     soup = BeautifulSoup(html_content, "html.parser")
+    all_links = soup.find_all('a', href=True)
+    
+    print(f"\n--- DEBUG START ---")
+    print(f"HTML Snippet (First 500 chars): {str(html_content)[:500]}")
+    print(f"Total <a> tags with href found: {len(all_links)}")
+    
     links = []
     
-    for a in soup.find_all('a', href=True):
+    for i, a in enumerate(all_links):
         href = a['href']
         
-        # --- DECODING LOGIC ---
-        # If this is a Proofpoint/URLDefense link, we need to extract the real URL
-        if "urldefense" in href:
-            # V3 Format: https://urldefense.com/v3/__REAL_URL__;!!...
-            if "/v3/" in href:
-                match = re.search(r'__(.*?)__', href)
-                if match:
-                    href = match.group(1)
-            # V2 Format: .../v2/url?u=REAL_URL&...
-            elif "/v2/" in href:
-                parsed = urllib.parse.urlparse(href)
-                params = urllib.parse.parse_qs(parsed.query)
-                if 'u' in params:
-                    # V2 uses a special encoding where - is %, and _ is /
-                    # But often standard unquote works enough to read the domain
-                    encoded_url = params['u'][0]
-                    href = urllib.parse.unquote(encoded_url.replace('-', '%').replace('_', '/'))
+        # PRINT THE FIRST 10 RAW LINKS so we can see the pattern
+        if i < 10:
+            print(f"LINK #{i}: {href}")
 
-        # --- NOW CHECK THE CLEAN LINK ---
-        # Skip unsubscribe/social/ads
-        if any(x in href.lower() for x in ["unsubscribe", "preferences", "twitter", "facebook", "linkedin", "ad.doubleclick"]):
-            continue
-            
-        # Check if it is a relevant Fierce Biotech story
+        # Try to decode URLDefense (Standard V3 regex)
+        if "urldefense" in href:
+            match = re.search(r'__(.*?)__', href)
+            if match:
+                decoded = match.group(1)
+                if i < 10: print(f"   -> DECODED V3: {decoded}")
+                href = decoded
+            else:
+                # If regex fails, print why
+                if i < 10: print(f"   -> FAILED TO DECODE V3 (No underscores found)")
+
+        # Filter logic
         if "fiercebiotech.com" in href and "biotech/" in href:
             links.append(href)
             
-    # Remove duplicates and limit to 5
     unique_links = list(set(links))
-    
-    print(f"DEBUG: Found {len(unique_links)} articles. First 3: {unique_links[:3]}")
+    print(f"--- DEBUG END ---\n")
     return unique_links[:5]
 
 def scrape_article_text(url):
@@ -194,6 +190,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
