@@ -24,28 +24,35 @@ TELEGRAM_CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 def get_latest_email():
-    """Connects to Gmail and fetches the latest Fierce Biotech email."""
+    """Connects to Gmail and fetches the latest Fierce Biotech email (Direct or Forwarded)."""
     mail = imaplib.IMAP4_SSL("imap.gmail.com")
     mail.login(EMAIL_USER, EMAIL_PASS)
     mail.select("inbox")
 
-    # Search for emails from the specific address in the last 3 days
-    # We use 3 days to ensure the test works even if today's email is late
+    # Look back 3 days to find recent emails
     date = (datetime.date.today() - datetime.timedelta(days=3)).strftime("%d-%b-%Y")
     
-    # Updated search query using the specific email address
-    status, messages = mail.search(None, f'(FROM "editors@go.fiercebiotech.com" SINCE "{date}")')
+    # --- KEY CHANGE HERE ---
+    # We search for "Fierce" in the SUBJECT.
+    # This captures:
+    # 1. "Fierce Biotech Daily" (Direct)
+    # 2. "Fwd: Fierce Biotech Daily" (Forwarded)
+    status, messages = mail.search(None, f'(SUBJECT "Fierce" SINCE "{date}")')
     
     email_ids = messages[0].split()
     if not email_ids:
-        print(f"No emails found from editors@go.fiercebiotech.com since {date}.")
+        print(f"No emails found with subject 'Fierce' since {date}.")
         return None
 
-    # Fetch the latest one (last in the list)
+    # Fetch the latest one
     status, msg_data = mail.fetch(email_ids[-1], "(RFC822)")
     for response_part in msg_data:
         if isinstance(response_part, tuple):
             msg = email.message_from_bytes(response_part[1])
+            
+            # Print subject for debugging log
+            print(f"Found Email Subject: {msg['subject']}")
+            
             if msg.is_multipart():
                 for part in msg.walk():
                     if part.get_content_type() == "text/html":
@@ -152,3 +159,4 @@ def main():
 if __name__ == "__main__":
 
     main()
+
