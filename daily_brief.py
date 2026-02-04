@@ -26,9 +26,9 @@ def get_latest_articles_from_rss():
         return []
     
     links = []
-    print(f"Found {len(feed.entries)} entries. Grabbing top 5...")
+    print(f"Found {len(feed.entries)} entries. Grabbing top 10...")
     
-    for entry in feed.entries[:5]:
+    for entry in feed.entries[:10]:
         print(f" - Found: {entry.title}")
         links.append(entry.link)
         
@@ -84,14 +84,51 @@ def generate_script(raw_text):
     return response.choices[0].message.content
 
 def text_to_speech(script):
-    """Generates MP3 using OpenAI TTS."""
-    response = client.audio.speech.create(
-        model="tts-1",
-        voice="nova", 
-        input=script
-    )
-    response.stream_to_file("daily_update.mp3")
-    return "daily_update.mp3"
+    """Generates MP3 using OpenAI TTS (Handles scripts longer than 4096 chars)."""
+    
+    # OpenAI TTS has a strict 4096 character limit.
+    # We split the script into chunks if it exceeds this.
+    max_length = 4096
+    chunks = []
+    
+    if len(script) > max_length:
+        print(f"Script is long ({len(script)} chars). Splitting into chunks...")
+        current_chunk = ""
+        # Split by paragraphs to keep natural pauses
+        for paragraph in script.split("\n"):
+            if len(current_chunk) + len(paragraph) + 1 < max_length:
+                current_chunk += paragraph + "\n"
+            else:
+                chunks.append(current_chunk)
+                current_chunk = paragraph + "\n"
+        if current_chunk:
+            chunks.append(current_chunk)
+    else:
+        chunks = [script]
+
+    output_filename = "daily_update.mp3"
+    
+    # Open the file in 'append binary' mode to stitch chunks together
+    with open(output_filename, "wb") as f:
+        for i, chunk in enumerate(chunks):
+            if not chunk.strip(): continue
+            
+            print(f"Synthesizing audio part {i+1}/{len(chunks)}...")
+            try:
+                response = client.audio.speech.create(
+                    model="tts-1",
+                    voice="onyx", 
+                    input=chunk
+                )
+                
+                # Write the audio bytes directly to the file
+                for audio_data in response.iter_bytes():
+                    f.write(audio_data)
+                    
+            except Exception as e:
+                print(f"Error on chunk {i+1}: {e}")
+
+    return output_filename
 
 def send_via_telegram(audio_file, text_file):
     """Pushes the audio file AND the transcript to your phone."""
@@ -167,6 +204,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
