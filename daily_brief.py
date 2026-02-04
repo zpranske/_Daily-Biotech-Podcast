@@ -29,7 +29,7 @@ def get_latest_email():
     date = (datetime.date.today() - datetime.timedelta(days=3)).strftime("%d-%b-%Y")
     
     # Updated search query using the specific email address
-    status, messages = mail.search(None, f'(FROM "editors@go.fiercebiotech.com" SINCE "{date}")')
+    status, messages = mail.search(None, f'(FROM "zpranske@brandeis.edu" SINCE "{date}")')
     
     email_ids = messages[0].split()
     if not email_ids:
@@ -194,5 +194,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
