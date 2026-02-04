@@ -26,9 +26,9 @@ def get_latest_articles_from_rss():
         return []
     
     links = []
-    print(f"Found {len(feed.entries)} entries. Grabbing top 10...")
+    print(f"Found {len(feed.entries)} entries. Grabbing top 5...")
     
-    for entry in feed.entries[:10]:
+    for entry in feed.entries[:5]:
         # RSS links are clean (no tracking wrappers!)
         print(f" - Found: {entry.title}")
         links.append(entry.link)
@@ -155,6 +155,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
