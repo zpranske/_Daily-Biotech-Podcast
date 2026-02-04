@@ -99,7 +99,7 @@ def optimize_script_for_audio(script_text):
     - "scRNA" -> "s-c-RNA" (Read as letters)
     - "AAV" -> "A-A-V" (Read as letters)
     - "EGFR" -> "E-G-F-R" (Read as letters)
-    - "NMDAR" -> "N-M-D-A-R" or "NMDA receptor" (Read as letters)
+    - "NMDAR" -> "N-M-D-A-R" or "NMDA receptor"
     - "smFISH" -> "s-m-fish" (Combination of letters and words)
     - "GABAR" -> "Gaba-R" or "GABA receptor" (Combination of letters and words)
     - "CAR-T" -> "car-T" (Combination of letters and words)
@@ -239,5 +239,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
