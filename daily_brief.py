@@ -7,6 +7,7 @@ from openai import OpenAI
 import os
 import datetime
 import re
+import urllib.parse
 
 # --- CONFIGURATION ---
 EMAIL_USER = os.environ["EMAIL_USER"]
@@ -49,32 +50,44 @@ def get_latest_email():
     return None
     
 def extract_article_links(html_content):
-    """Parses email HTML to find article links (Robust for Forwards)."""
+    """Parses email HTML to find article links (Handles Proofpoint/URLDefense)."""
     soup = BeautifulSoup(html_content, "html.parser")
     links = []
     
-    # Keyword list to identify real articles vs ads/nav
-    # We look for these words in the URL OR the link text
-    keywords = ["fiercebiotech.com", "story", "article"]
-    
     for a in soup.find_all('a', href=True):
         href = a['href']
-        text = a.get_text().lower()
         
-        # skip unsubscribe/social links
-        if any(x in href.lower() for x in ["unsubscribe", "preferences", "twitter", "facebook", "linkedin"]):
+        # --- DECODING LOGIC ---
+        # If this is a Proofpoint/URLDefense link, we need to extract the real URL
+        if "urldefense" in href:
+            # V3 Format: https://urldefense.com/v3/__REAL_URL__;!!...
+            if "/v3/" in href:
+                match = re.search(r'__(.*?)__', href)
+                if match:
+                    href = match.group(1)
+            # V2 Format: .../v2/url?u=REAL_URL&...
+            elif "/v2/" in href:
+                parsed = urllib.parse.urlparse(href)
+                params = urllib.parse.parse_qs(parsed.query)
+                if 'u' in params:
+                    # V2 uses a special encoding where - is %, and _ is /
+                    # But often standard unquote works enough to read the domain
+                    encoded_url = params['u'][0]
+                    href = urllib.parse.unquote(encoded_url.replace('-', '%').replace('_', '/'))
+
+        # --- NOW CHECK THE CLEAN LINK ---
+        # Skip unsubscribe/social/ads
+        if any(x in href.lower() for x in ["unsubscribe", "preferences", "twitter", "facebook", "linkedin", "ad.doubleclick"]):
             continue
             
-        # If it's a fiercebiotech link (even if wrapped in a redirect)
-        if "fiercebiotech.com" in href:
+        # Check if it is a relevant Fierce Biotech story
+        if "fiercebiotech.com" in href and "biotech/" in href:
             links.append(href)
             
     # Remove duplicates and limit to 5
     unique_links = list(set(links))
     
-    # Debug print to help us see what is happening
-    print(f"DEBUG: Found {len(unique_links)} raw links. First 3: {unique_links[:3]}")
-    
+    print(f"DEBUG: Found {len(unique_links)} articles. First 3: {unique_links[:3]}")
     return unique_links[:5]
 
 def scrape_article_text(url):
@@ -181,4 +194,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
