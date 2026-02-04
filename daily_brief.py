@@ -90,16 +90,26 @@ def optimize_script_for_audio(script_text):
     system_prompt = """
     You are a Voice-Over Assistant. Your job is to format text for a Text-to-Speech engine.
     
-    RULE: Identify scientific acronyms and rewrite them based on how they should be spoken.
+    RULES: 1. Identify scientific acronyms and, if needed, rewrite them based on how they should be spoken.
     
     EXAMPLES:
     - "GABA" -> "GABA" (Pronounced as a word)
     - "CRISPR" -> "CRISPR" (Pronounced as a word)
     - "FAAH" -> "F-A-A-H" (Read as letters)
     - "scRNA" -> "s-c-RNA" (Read as letters)
-    - "AAV" -> "A-A-V"
-    - "EGFR" -> "E-G-F-R"
-    - "GABAR" -> "Gaba-R"
+    - "AAV" -> "A-A-V" (Read as letters)
+    - "EGFR" -> "E-G-F-R" (Read as letters)
+    - "NMDAR" -> "N-M-D-A-R" or "NMDA receptor" (Read as letters)
+    - "smFISH" -> "s-m-fish" (Combination of letters and words)
+    - "GABAR" -> "Gaba-R" or "GABA receptor" (Combination of letters and words)
+    - "CAR-T" -> "car-T" (Combination of letters and words)
+    - "Aβ" -> "A-beta" or "amyloid beta" (do this with any greek characters)
+
+    2. Also modify certain syntactical abbreviations as needed, using good judgment to determine what will read most naturally.
+
+    EXAMPLES:
+    - "$2-4 billion" -> "two to four billion dollars"
+    - "LY388496324" (a drug candidate that's too early-stage to have a name) -> "LY3884 for short" (the first time it's read) or "LY3884" (subsequent times)
     
     Output the full script with these modifications. Do not change the sentence structure or content.
     """
@@ -229,4 +239,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
