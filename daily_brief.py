@@ -96,12 +96,29 @@ def text_to_speech(script):
     return "daily_update.mp3"
 
 def send_via_telegram(audio_file):
-    """Pushes the audio file to your phone."""
+    """Pushes the audio file to your phone and prints the server response."""
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendAudio"
+    
+    print(f"Attempting to send to Chat ID: {TELEGRAM_CHAT_ID}")
+    
     with open(audio_file, 'rb') as audio:
         payload = {'chat_id': TELEGRAM_CHAT_ID, 'title': f"Daily Biotech Update {datetime.date.today()}"}
         files = {'audio': audio}
-        requests.post(url, data=payload, files=files)
+        
+        try:
+            response = requests.post(url, data=payload, files=files, timeout=30)
+            
+            # Print the raw response from Telegram
+            print(f"Telegram Response Code: {response.status_code}")
+            print(f"Telegram Response Body: {response.text}")
+            
+            if response.status_code == 200:
+                print("✅ Success! Message sent.")
+            else:
+                print("❌ Failed! Check the error message above.")
+                
+        except Exception as e:
+            print(f"❌ Error during connection: {e}")
 
 def main():
     # 1. Get Links (RSS)
@@ -138,4 +155,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
