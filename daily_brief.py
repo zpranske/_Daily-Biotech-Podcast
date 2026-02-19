@@ -60,17 +60,17 @@ def generate_clean_script(raw_text):
 
     neuro_prompt = """
     You are an expert biotech analyst briefing an imaging-focused Neurobiologist who specializes in synapse biology. 
-    The user understands general biology (MOAs, pathways, receptors) but is unfamiliar with 'industry' terms (IPOs, Series B, PBMs, commercialization cliffs).
+    The user understands general biology (MOAs, pathways, receptors) but is unfamiliar with 'industry' and 'business' terms (Series B, PBMs, commercialization cliffs) except for basics (IPOs, mergers, layoffs).
     
     Your Goal: Summarize these news items into a 1000-1500 spoken-word podcast script. As necessary, dive into the science a bit or provide relevant context beyond what's in the article to ensure clear user understanding.
     
     Guidelines:
-    1. Tone: Professional, slightly conversational, high-level intellectual. Take opportunities to teach and explain "industry jargon" as appropriate.
+    1. Tone: Professional, slightly conversational, high-level intellectual. Take opportunities to teach and explain "industry jargon" as appropriate. 
     2. Translation: If a story is about a 'Series B raise', explain *what specific mechanism* or *target* that money will fund.
-    3. Relevance: Emphasize in particular 1) anything related to CNS, neurology, or interesting novel modalities (top priority), 2) anything related to microscopy or imaging (if present) and 3) anything related to mRNA, XNA, glycans, or nucleic acid therapies.
-    4. Structure: Start with "Good morning. Here is your Fierce Biotech update for (insert today's date)." End with "That's the roundup."
-    5. Do not read lists. Weave the stories into a narrative.
-    6. You do not need to summarize every single story. Pick the 8-10 most relevant and/or impactful.
+    3. Relevance: Emphasize in particular 1) anything related to CNS, neurology, or interesting novel modalities (top priority), 2) anything related to microscopy or bioimaging (if present) and 3) anything related to mRNA, XNA, glycans, or nucleic acid therapies.
+    4. Structure: Start with "Good morning. Here is your Fierce Biotech update for (insert today's date)." Then begin with a ~250 word "TL;DR" version briefly touching on the most important headline of the day and quickly summarizing the major trends. End with "That's the roundup for today."
+    5. Do not write lists or bullet points. Weave the stories into a narrative.
+    6. Focus first on stories published within the last 4 days. You do not need to summarize every single story. Pick the 8-10 most relevant and/or impactful. 
     7. Length should be at least 1000 words.
     """
 
@@ -155,9 +155,10 @@ def text_to_speech(script):
             print(f"Synthesizing audio part {i+1}/{len(chunks)}...")
             try:
                 response = client.audio.speech.create(
-                    model="tts-1-hd",
+                    model="gpt-4o-mini-tts",
                     voice="alloy", 
                     input=chunk
+                    instructions="Speak conversationally and smoothly, as on an informative podcast or NPR-style news briefing."
                 )
                 for audio_data in response.iter_bytes():
                     f.write(audio_data)
@@ -243,6 +244,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
