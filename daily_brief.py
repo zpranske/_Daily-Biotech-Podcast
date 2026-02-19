@@ -70,7 +70,7 @@ def generate_clean_script(raw_text):
     3. Relevance: Emphasize in particular 1) anything related to CNS, neurology, or interesting novel modalities (top priority), 2) anything related to microscopy or bioimaging (if present) and 3) anything related to mRNA, XNA, glycans, or nucleic acid therapies.
     4. Structure: Start with "Good morning. Here is your Fierce Biotech update for (insert today's date)." Then begin with a ~250 word "TL;DR" version briefly touching on the most important headline of the day and quickly summarizing the major trends. End with "That's the roundup for today."
     5. Do not write lists or bullet points. Weave the stories into a narrative.
-    6. Focus first on stories published within the last 4 days. You do not need to summarize every single story. Pick the 8-10 most relevant and/or impactful. 
+    6. You do not need to summarize every single story. Pick the 8-10 most relevant and/or impactful. 
     7. Length should be at least 1000 words.
     """
 
@@ -244,6 +244,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
