@@ -157,7 +157,7 @@ def text_to_speech(script):
                 response = client.audio.speech.create(
                     model="gpt-4o-mini-tts",
                     voice="alloy", 
-                    input=chunk
+                    input=chunk,
                     instructions="Speak conversationally and smoothly, as on an informative podcast or NPR-style news briefing."
                 )
                 for audio_data in response.iter_bytes():
@@ -244,6 +244,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
