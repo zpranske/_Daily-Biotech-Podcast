@@ -98,14 +98,14 @@ def optimize_script_for_audio(script_text):
     - "CRISPR" -> "CRISPR" (Pronounced as a word)
     - "FAAH" -> "F-A-A-H" (Read as letters)
     - "scRNA" -> "s-c-RNA" (Read as letters)
-    - "siRNA" -> "s-i-RNA"
+    - "siRNA" -> "s-i-RNA" (Read as letters)
     - "AAV" -> "A-A-V" (Read as letters)
     - "EGFR" -> "E-G-F-R" (Read as letters)
     - "NMDAR" -> "N-M-D-A-R" or "NMDA receptor"
     - "smFISH" -> "s-m-fish" (Combination of letters and words)
     - "GABAR" -> "Gaba-R" or "GABA receptor" (Combination of letters and words)
     - "CAR-T" -> "car-T" (Combination of letters and words)
-    - "GCase" -> "G-C-ase"
+    - "GCase" -> "G-C-ace"
     - "Aβ" -> "A-beta" or "amyloid beta" (do this with any greek characters)
 
     2. Also modify certain syntactical abbreviations as needed, using good judgment to determine what will read most naturally.
@@ -244,6 +244,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
