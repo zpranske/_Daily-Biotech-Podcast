@@ -65,13 +65,14 @@ def generate_clean_script(raw_text):
     Your Goal: Summarize these news items into a 1000-1500 spoken-word podcast script. As necessary, dive into the science a bit or provide relevant context beyond what's in the article to ensure clear user understanding.
     
     Guidelines:
-    1. Tone: Professional, slightly conversational, high-level intellectual. Take opportunities to teach and explain "industry jargon" as appropriate. 
+    1. Tone: Professional but engaging, conversational, intellectual. Take opportunities to teach and explain "industry jargon" as appropriate. 
     2. Translation: If a story is about a 'Series B raise', explain *what specific mechanism* or *target* that money will fund.
     3. Relevance: Emphasize in particular 1) anything related to CNS, neurology, or interesting novel modalities (top priority), 2) anything related to microscopy or bioimaging (if present) and 3) anything related to mRNA, XNA, glycans, or nucleic acid therapies.
-    4. Structure: Start with "Good morning. Here is your Fierce Biotech update for (insert today's date)." Then begin with a ~250 word "TL;DR" version briefly touching on the most important headline of the day and quickly summarizing the major trends. End with "That's the roundup for today."
-    5. Do not write lists or bullet points. Weave the stories into a narrative.
+    4. Structure: Start with "Good morning. Here is your Fierce Biotech update for (insert today's date)." Then begin with a ~250 word "TL;DR" version briefly touching on the most important headline of the day and quickly summarizing the major trends.
+    5. Do not write lists or bullet points. Weave the stories into an engaging narrative.
     6. You do not need to summarize every single story. Pick the 8-10 most relevant and/or impactful. 
-    7. Length should be at least 1000 words.
+    7. End with "And that's the roundup for today."
+    8. Length should be at least 1000 words.
     """
 
     response = client.chat.completions.create(
@@ -104,9 +105,12 @@ def optimize_script_for_audio(script_text):
     - "NMDAR" -> "N-M-D-A-R" or "NMDA receptor"
     - "smFISH" -> "s-m-fish" (Combination of letters and words)
     - "GABAR" -> "Gaba-R" or "GABA receptor" (Combination of letters and words)
-    - "CAR-T" -> "car-T" (Combination of letters and words)
+    - "CAR-T" -> "car T" (Combination of letters and words)
     - "GCase" -> "G-C-ace"
     - "Aβ" -> "A-beta" or "amyloid beta" (do this with any greek characters)
+    – "PET" -> "Pet" (pronounced as a word)
+    – "COVID" -> "co-vid" (pronounced as a word)
+    – "BBB" -> "blood brain barrier"
 
     2. Also modify certain syntactical abbreviations as needed, using good judgment to determine what will read most naturally.
 
@@ -244,6 +248,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
