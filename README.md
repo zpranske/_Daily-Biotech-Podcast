@@ -11,9 +11,9 @@ Note: The cost per run is ~40 cents as of March 2026. This can possibly be reduc
 
 ### 1. Prerequisites
 You will need three things before you start. Instructions for getting these are below.
-– An OpenAI API Key (Make sure your account is funded with a few dollars, as the API requires prepaid credits)
-– A Telegram Bot Token
-– Your personal Telegram Chat ID
+1. An OpenAI API Key (Make sure your account is funded with a few dollars, as the API requires prepaid credits)
+2. A Telegram Bot Token
+3. Your personal Telegram Chat ID
 
 ### 2a. Get your OpenAI API Key
 0. Create an OpenAI account, if you don't have one yet
