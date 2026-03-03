@@ -1,4 +1,4 @@
-# 🎙️  AI RSS Feed Podcast Generator
+#  AI RSS Feed Podcast Generator
 
 Automated pipeline that scrapes daily news from an RSS feed, uses AI to summarize the articles into a podcast, generates audio using text to speech, and delivers the final MP3 and text transcript directly to your phone via Telegram.
 
