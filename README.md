@@ -52,7 +52,7 @@ You will need three things before you start. Instructions for getting these are 
 You can easily tweak this script for your specific needs by editing 'daily_brief.py':
 
 * **Change the News Source:** Update the **RSS_URL** variable at the top of the script to any valid RSS feed.
-* **Change the Podcast Persona:** Locate the **neuro_prompt** variable inside the 'generate_clean_script' function and rewrite the instructions to fit your profession or interests.
+* **Change the Podcast Persona:** Locate the **neuro_prompt** variable inside the 'generate_clean_script' function and rewrite the instructions to do what you want it to do.
 * **Change the Voice:** Look for 'voice="onyx"' inside the 'text_to_speech' function. See available voices here: https://developers.openai.com/api/docs/guides/text-to-speech/. You can also custom prompt it to tweak pacing and tone –– this is best tested using openai.fm first.
 * **Change the Schedule:** Edit the '.yml' file in the '.github/workflows/' directory. Modify the 'cron' string to change when the podcast runs (this is a standardized format and you can find many examples online).
 
