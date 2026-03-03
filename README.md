@@ -20,19 +20,19 @@ You will need three things before you start. Instructions for getting these are 
 1. Go to platform.openai.com/api-keys
 2. Create a new secret key, and call it whatever you want (e.g. "Podcast Bot"). This is your **OPENAI_API_KEY**
 
-### 2. Create Your Telegram Bot
+### 2b. Create Your Telegram Bot
 0. Create a Telegram account, if you don't have one yet
 1. Open Telegram and search for "BotFather" (the official bot creation tool)
 2. Send the message '/newbot' and follow the prompts to give your bot a name and username. Call it whatever you want; e.g. "FierceSyncBot"
 3. BotFather will give you an HTTP API Token (it looks like '123456789:ABCdefGHIjklmNoPQRstuvwxyz'). This is your **TELEGRAM_TOKEN**
 4. **Important:** Search for your newly created bot's username in Telegram and click Start (or send it a message)
 
-### 3. Get Your Personal Telegram Chat ID
+### 2c. Get Your Personal Telegram Chat ID
 1. In Telegram, search for "@GetMyIDBot"
 2. Click Start or send it a message
 3. It will reply with your personal ID number (e.g., '123456789'). This is your **TELEGRAM_CHAT_ID**
 
-### 4. Fork and Configure the Repository
+### 3. Fork and Configure the Repository
 1. Fork this repository to copy it to your GitHub
 2. In your forked repository, go to Settings -> Secrets and variables -> Actions
 3. Click "New repository secret" and add the following three secrets exactly as spelled:
@@ -40,7 +40,7 @@ You will need three things before you start. Instructions for getting these are 
   **TELEGRAM_TOKEN**: Paste your BotFather token here
   **TELEGRAM_CHAT_ID**: Paste your personal ID number here
 
-### 5. Enable GitHub Actions
+### 4. Enable GitHub Actions
 1. Go to the **Actions** tab in your repository
 2. GitHub disables workflows on forked repos by default. Click **"I understand my workflows, go ahead and enable them"**
 3. You can test the script immediately by selecting the workflow on the left and clicking **Run workflow**. Run it on the main branch.
