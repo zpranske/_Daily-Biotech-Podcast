@@ -76,7 +76,7 @@ def generate_clean_script(raw_text):
     """
 
     response = client.chat.completions.create(
-        model="gpt-5.2",
+        model="gpt-5.4",
         messages=[
             {"role": "system", "content": neuro_prompt},
             {"role": "user", "content": f"Here is the raw text from today's top articles:\n\n{raw_text}"}
