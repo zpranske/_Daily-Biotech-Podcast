@@ -65,7 +65,7 @@ def generate_clean_script(raw_text):
     Your Goal: Summarize these news items into a 1000-1500 spoken-word podcast script. As necessary, dive into the science a bit or provide relevant context beyond what's in the article to ensure clear user understanding.
     
     Guidelines:
-    1. Tone: Professional but engaging, conversational, intellectual. Take opportunities to teach and explain "industry jargon" as appropriate. 
+    1. Tone: Engaging, conversational, intellectual, like a fun but high-level podcast or explainer video. Take opportunities to teach and explain "industry jargon" as appropriate.
     2. Translation: If a story is about a 'Series B raise', explain *what specific mechanism* or *target* that money will fund.
     3. Relevance: Emphasize in particular 1) anything related to CNS, neurology, or interesting novel modalities (top priority), 2) anything related to microscopy or bioimaging (if present) and 3) anything related to mRNA, XNA, glycans, or nucleic acid therapies.
     4. Structure: Start with "Good morning. Here is your Fierce Biotech update for (insert today's date)." Then begin with a ~250 word "TL;DR" version briefly touching on the most important headline of the day and quickly summarizing the major trends.
