@@ -179,7 +179,24 @@ def text_to_speech(script):
                     model="gpt-4o-mini-tts",
                     voice="alloy", 
                     input=chunk,
-                    instructions="Speak conversationally and smoothly, as on an informative podcast or NPR-style news briefing."
+                    instructions="""
+                    You are a smart, engaged podcast host delivering a morning biotech briefing. Think of the energy of a good daily 
+                    news podcast — warm, curious, slightly wry when the material calls 
+                    for it — not the even-keeled neutrality of traditional radio news. 
+                    
+                    Vary your pacing. Move briskly through setup sentences and 
+                    transitions; slow down on the interesting beat of each story — the 
+                    surprising number, the company name, the punchline of a reframe. 
+                    Don't land every sentence on the same note.
+                    
+                    When the script uses parentheticals or mid-sentence asides, treat 
+                    them as asides: slightly quicker, slightly lower in pitch. Then return to full voice for the main thread.
+                    
+                    Let dry humor and mild skepticism come through when the writing 
+                    invites it. Most of the time you're just delivering the news clearly and with genuine interest. 
+                    
+                    Speak slightly faster than you would normally (~1.3x). Importantly, save emphasis for important parts. Otherwise, don't over-emphasize or over-emote.
+                    """
                 )
                 for audio_data in response.iter_bytes():
                     f.write(audio_data)
