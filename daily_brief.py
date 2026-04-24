@@ -65,14 +65,26 @@ def generate_clean_script(raw_text):
     Your Goal: Summarize these news items into a 1000-1500 spoken-word podcast script. As necessary, dive into the science a bit or provide relevant context beyond what's in the article to ensure clear user understanding.
     
     Guidelines:
-    1. Tone: Engaging, conversational, intellectual, like a fun but high-level podcast or explainer video. Take opportunities to teach and explain "industry jargon" as appropriate.
-    2. Translation: If a story is about a 'Series B raise', explain *what specific mechanism* or *target* that money will fund.
-    3. Relevance: Emphasize in particular 1) anything related to CNS, neurology, or interesting novel modalities (top priority), 2) anything related to microscopy or bioimaging (if present) and 3) anything related to mRNA, XNA, glycans, or nucleic acid therapies.
-    4. Structure: Start with "Good morning. Here is your Fierce Biotech update for (insert today's date)." Then begin with a ~250 word "TL;DR" version briefly touching on the most important headline of the day and quickly summarizing the major trends.
-    5. Do not write lists or bullet points. Weave the stories into an engaging narrative.
-    6. You do not need to summarize every single story. Pick the 8-10 most relevant and/or impactful. 
-    7. End with "And that's the roundup for today."
-    8. Length should be at least 1000 words.
+    TONE: 
+        1. Write with a tone that's engaging, conversational, like someone who genuinely finds the biotech industry interesting and wants to share. Examples of strategies to use to make the narrative more engaging are below:
+        2. Name the frame. When a story is being told one way in the trade press but is actually about something else, say so. "The headline is the layoffs. The real story is that this is the third company this quarter to quietly abandon tau."
+           The user wants to be able to converse with others in biotech, and this means not just knowing the raw facts but also predicting how other industry insiders will react to the news. You should guide them towards this perspective.  
+        3. Skepticism where warranted. If a Phase 2 readout is being spun harder than the effect size justifies, say it. If a deal structure is mostly biobucks with tiny upfront, flag it. He wants a read, not a recap.
+        4. Running threads across the roundup. If two stories rhyme — both are GLP-1 adjacencies, both are companies pivoting off amyloid, both are Chinese-originated assets getting licensed west — connect them explicitly. A roundup is more than 
+          the sum of its items when the items talk to each other.
+        5. Enjoy the jargon instead of apologizing for it. "A Series B, which in biotech-speak basically means 'we showed the drug does something in a dish or a mouse and now we need real money to find out if it works in people'" is better than 
+          a dry parenthetical definition.
+    PRIORITIES (in order):
+        1. CNS, neurology, novel modalities — lead with these, go deeper on the science, assume he wants the mechanism.
+        2. Microscopy, bioimaging, biosensor platforms — he's an imaging person, flag anything relevant even if it's a small story.
+        3. mRNA, XNA, glycan, and nucleic acid therapies.
+        4. Everything else — cover only if it's genuinely interesting or strategically important (big M&A, a platform collapse, a regulatory shift that changes the landscape).    
+    STRUCTURE: Start with some variant of "Good morning. Here is your Fierce Biotech update for (insert today's date)." Then begin with a ~250 word "TL;DR" version briefly touching on the most important headline of the day and quickly summarizing the
+        major trends. End with "And that's the roundup for today."
+    OTHER RULES:
+        1. Do not write lists or bullet points. Weave the stories into an engaging narrative.
+        2. You do not need to summarize every single story - only those worth . Pick the 8-10 most relevant and/or impactful. 
+        3. Length should be at least 1000 words.
     """
 
     response = client.chat.completions.create(
@@ -114,6 +126,8 @@ def optimize_script_for_audio(script_text):
     – "BBB" -> "blood brain barrier"
     - "HER2" -> "Her-two" (pronounced as a word)
     - "VEGF" -> "Vedge-eff" (pronounced as a word)
+    - "GAD" -> "Gad" (pronounced as a word)
+    - "Sanofi" -> "Sun-OH-fee" (not an acronym, TTS just often gets this wrong and I want to make sure it's pronounced correctly)
 
     2. Also modify certain syntactical abbreviations as needed, using good judgment to determine what will read most naturally.
 
@@ -126,7 +140,7 @@ def optimize_script_for_audio(script_text):
     """
 
     response = client.chat.completions.create(
-        model="gpt-5.1",
+        model="gpt-5.4",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": script_text}
