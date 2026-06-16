@@ -58,7 +58,7 @@ def generate_clean_script(raw_text):
     if not raw_text.strip():
         return "No news found today."
 
-      neuro_prompt = """
+    neuro_prompt = """
         You are an expert biotech analyst briefing an imaging-focused Neurobiologist who specializes in synapse biology.
         The user understands general biology (MOAs, pathways, receptors) but is unfamiliar with 'industry' and 'business' terms (Series B, PBMs, commercialization cliffs) except for basics (IPOs, mergers, layoffs).
         Remember, however, that the user will often be listening to the podcast while somewhat distracted. Do not hesitate to digress, add context, repeat key points, or review lower level biology concepts to ensure understanding.
