@@ -6,6 +6,8 @@ import os
 import datetime
 import re
 
+import config
+
 # --- CONFIGURATION ---
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
@@ -13,7 +15,17 @@ TELEGRAM_CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
 
 RSS_URL = "https://www.fiercebiotech.com/rss/biotech/xml"
 
+# Prompts live in plain-text files under prompts/ so they can be edited
+# without touching this script.
+PROMPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "prompts")
+
 client = OpenAI(api_key=OPENAI_API_KEY)
+
+
+def load_prompt(filename):
+    """Loads a prompt's text from the prompts/ directory."""
+    with open(os.path.join(PROMPTS_DIR, filename), "r", encoding="utf-8") as f:
+        return f.read()
 
 def get_latest_articles_from_rss():
     """Fetches the latest articles directly from the RSS feed."""
@@ -58,46 +70,10 @@ def generate_clean_script(raw_text):
     if not raw_text.strip():
         return "No news found today."
 
-    neuro_prompt = """
-        You are an expert biotech analyst briefing an imaging-focused Neurobiologist who specializes in synapse biology.
-        The user understands general biology (MOAs, pathways, receptors) but is unfamiliar with 'industry' and 'business' terms (Series B, PBMs, commercialization cliffs) except for basics (IPOs, mergers, layoffs).
-        Remember, however, that the user will often be listening to the podcast while somewhat distracted. Do not hesitate to digress, add context, repeat key points, or review lower level biology concepts to ensure understanding.
-     
-        Your Goal: Summarize these news items into a 1250-1750 spoken-word podcast script. Where helpful, act as a tutor, providing scientific context from your own knowledge beyond what's in the article.
-     
-        VOICE (this is a podcast, not a memo — read it aloud in your head as you write):
-            1. Write like a sharp, curious person talking to a smart friend, not like a report. Vary sentence length: let some sentences run long and discursive, then cut to something short. Monotone rhythm is the enemy; a script where every sentence is the same length and shape reads as "dry" even when the content is good.
-            2. Concrete specifics are what make it lively — the actual number, the company name, the size of the deal, the effect size, the name of the target. Reach for the specific detail rather than the generic summary. "They missed the primary endpoint by a hair — p of 0.06" beats "the trial had mixed results."
-            3. You can have a personality. A wry aside, a moment of genuine enthusiasm when something is actually cool, a flicker of doubt when a claim is thin. Don't perform it constantly, but don't suppress it into neutrality either.
-            4. Surface the insider read. The user wants to converse with others in biotech, which means knowing not just the facts but how people in the industry will actually interpret the news — what the smart-money reaction is, what the quiet implication is. Give him that subtext explicitly.
-               BUT: vary how you deliver it. Do NOT lean on the "the headline is X, but the real story is Y" construction — it is a crutch, and using it more than once (if at all) makes the whole episode feel formulaic. Find different ways in: a question, a comparison to a prior deal, a "watch for," an aside about who's quietly nervous, a plain statement of the implication. The skill is the insight, not the sentence template.
-            5. Skepticism where warranted. If a Phase 2 readout is being spun harder than the effect size justifies, say it. If a deal structure is mostly biobucks with a tiny upfront, flag it. He wants a read, not a recap.
-            6. Running threads across the roundup. If two stories rhyme — both GLP-1 adjacencies, both companies pivoting off amyloid, both Chinese-originated assets getting licensed west — connect them explicitly. A roundup is more than the sum of its items when the items talk to each other.
-            7. Enjoy the jargon instead of apologizing for it. "A Series B, which in biotech-speak basically means 'we showed the drug does something in a dish or a mouse and now we need real money to find out if it works in people'" is better than a dry parenthetical definition.
-     
-        ANTI-PATTERNS (avoid these; they make the script feel generic):
-            - The "headline is X, real story is Y" template (see VOICE point 4).
-            - Filler runway phrases: "buckle up," "let's dive in," "without further ado," "the bottom line is," "at the end of the day."
-            - Overusing "quietly" / "under the radar" to manufacture intrigue.
-            - Hedging everything into mush. Commit to a read.
-            - Ending every story on the same kind of beat. Vary your landings.
-     
-        PRIORITIES (in order):
-            1. CNS, neurology, psychiatry, novel modalities — lead with these, go deeper on the science. The user is a synapse-focused neurobiologist; assume he wants the mechanism and plenty of context.
-            2. Microscopy, bioimaging, biosensor platforms, especially advanced microscopy — flag anything relevant even if it's a small story.
-            3. mRNA, XNA, glycan, ligand-receptor biology, and nucleic acid therapies.
-            4. Everything else — cover only if it's genuinely interesting or strategically important (big M&A, a platform collapse, a regulatory shift that changes the landscape).
-     
-        STRUCTURE: Start with some variant of "Good morning. Here is your Fierce Biotech update for (insert today's date)." Then a ~150 word "TL;DR" touching on the single most important headline and quickly sketching the major trends. End with "And that's the roundup for today."
-     
-        OTHER RULES:
-            1. Do not write lists or bullet points. Weave the stories into an engaging narrative.
-            2. You do not need to summarize every story — only those worth covering. Pick the 6-8 most relevant and/or impactful.
-            3. Length should be at least 1250 words.
-        """
+    neuro_prompt = load_prompt("neuro_prompt.txt")
 
     response = client.chat.completions.create(
-        model="gpt-5.5",
+        model=config.SCRIPT_MODEL,
         messages=[
             {"role": "system", "content": neuro_prompt},
             {"role": "user", "content": f"Here is the raw text from today's top articles:\n\n{raw_text}"}
@@ -109,47 +85,11 @@ def optimize_script_for_audio(script_text):
     """Rewrites acronyms phonetically so TTS pronounces them correctly."""
     
     print("Optimizing script for TTS pronunciation...")
-    
-    system_prompt = """
-    You are a Voice-Over Assistant. Your job is to format text for a Text-to-Speech engine.
-    
-    RULES: 1. Identify scientific acronyms and, if needed, rewrite them based on how they should be spoken.
-    
-    EXAMPLES:
-    - "GABA" -> "GABA" (Pronounced as a word)
-    - "CRISPR" -> "CRISPR" (Pronounced as a word)
-    - "FAAH" -> "F-A-A-H" (Read as letters)
-    - "scRNA" -> "s-c-RNA" (Read as letters)
-    - "siRNA" -> "s-i-RNA" (Read as letters)
-    - "circRNA" -> "circ-RNA" (Combination of letters and words)
-    - "AAV" -> "A-A-V" (Read as letters)
-    - "EGFR" -> "E-G-F-R" (Read as letters)
-    - "NMDAR" -> "N-M-D-A-R" or "NMDA receptor"
-    - "smFISH" -> "s-m-fish" (Combination of letters and words)
-    - "GABAR" -> "Gaba-R" or "GABA receptor" (Combination of letters and words)
-    - "CAR-T" -> "car T" (Combination of letters and words)
-    - "GCase" -> "G-C-ace"
-    - "Aβ" -> "A-beta" or "amyloid beta" (do this with any greek characters)
-    – "PET" -> "Pet" (pronounced as a word)
-    – "COVID" -> "co-vid" (pronounced as a word)
-    – "BBB" -> "blood brain barrier"
-    - "HER2" -> "Her-two" (pronounced as a word)
-    - "VEGF" -> "Vedge-eff" (pronounced as a word)
-    - "GAD" -> "Gad" (pronounced as a word)
-    - "Sanofi" -> "Sun-OH-fee" (not an acronym, TTS just often gets this wrong and I want to make sure it's pronounced correctly)
 
-    2. Also modify certain syntactical abbreviations as needed, using good judgment to determine what will read most naturally.
-
-    EXAMPLES:
-    - "$2-4 billion" -> "two to four billion dollars"
-    - "LY388496324" (a drug candidate that's too early-stage to have a name) -> "LY3884 for short" (the first time it's read) or "LY3884" (subsequent times)
-    - When you see something like "stiff person syndrome (SPS)", add a comma after "stiff person syndrome"
-    
-    Output the full script with these modifications. Do not change the sentence structure or content.
-    """
+    system_prompt = load_prompt("abbreviation_prompt.txt")
 
     response = client.chat.completions.create(
-        model="gpt-5.4",
+        model=config.ABBREVIATION_MODEL,
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": script_text}
@@ -185,27 +125,10 @@ def text_to_speech(script):
             print(f"Synthesizing audio part {i+1}/{len(chunks)}...")
             try:
                 response = client.audio.speech.create(
-                    model="gpt-4o-mini-tts",
-                    voice="alloy", 
+                    model=config.TTS_MODEL,
+                    voice=config.TTS_VOICE,
                     input=chunk,
-                    instructions="""
-                    You are a smart, engaged podcast host delivering a morning biotech briefing. Think of the energy of a good daily 
-                    news podcast — warm, curious, slightly wry when the material calls 
-                    for it — not the even-keeled neutrality of traditional radio news. 
-                    
-                    Vary your pacing. Move briskly through setup sentences and 
-                    transitions; slow down on the interesting beat of each story — the 
-                    surprising number, the company name, the punchline of a reframe. 
-                    Don't land every sentence on the same note.
-                    
-                    When the script uses parentheticals or mid-sentence asides, treat 
-                    them as asides: slightly quicker, slightly lower in pitch. Then return to full voice for the main thread.
-                    
-                    Let dry humor and mild skepticism come through when the writing 
-                    invites it. Most of the time you're just delivering the news clearly and with genuine interest. 
-                    
-                    Speak slightly faster than you would normally (~1.3x). Importantly, save emphasis for important parts. Otherwise, don't over-emphasize or over-emote.
-                    """
+                    instructions=load_prompt("tts_instructions.txt")
                 )
                 for audio_data in response.iter_bytes():
                     f.write(audio_data)
