@@ -7,7 +7,7 @@ Currently configured for Fierce Biotech news, but easily customizable for any RS
 ## Setup Guide
 
 Follow these steps to fork this project and set it up for your own personal use. It takes about 10 minutes and requires no server hosting.
-Note: The cost per run is ~40 cents as of March 2026. TTS is the bulk of this cost, so it can be reduced significantly by not using TTS and delivering a text-only script.
+Note: The cost per run is ~40 cents as of July 2026. TTS is the bulk of this cost (using gpt-4o-mini-tts at $12/1M tokens). Cost can be reduced significantly by delivering a text-only script.
 
 ### 1. Prerequisites
 You will need three things before you start. Instructions for getting these are below.
