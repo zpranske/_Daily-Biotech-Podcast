@@ -4,6 +4,10 @@ on:
     - cron: '0 11 * * 2,5'
   workflow_dispatch: # Allows you to run it manually to test
 
+# Needed so the workflow can commit the transcript archive back to the repo.
+permissions:
+  contents: write
+
 jobs:
   run_podcast:
     runs-on: ubuntu-latest
@@ -28,3 +32,15 @@ jobs:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python daily_brief.py
+
+      - name: Commit transcript archive
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add archive/
+          if git diff --staged --quiet; then
+            echo "No new archive to commit."
+          else
+            git commit -m "Archive podcast transcript ($(date -u +%Y-%m-%d))"
+            git push
+          fi

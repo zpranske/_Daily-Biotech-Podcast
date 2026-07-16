@@ -47,6 +47,16 @@ You will need three things before you start. Instructions for getting these are 
 
 ---
 
+## Transcript Archive & Context Window
+
+Every run writes a permanent record to `archive/YYYY-MM-DD.md` (the list of scraped source URLs plus the full transcript) and the workflow commits it back to the repo — so you get a versioned, human-readable archive of every episode for free.
+
+Because the workflow checks the repo out fresh each run, that archive also acts as a **context window**: before writing a new script, the pipeline loads the last few episodes and (1) skips any article URL already covered, and (2) feeds those recent transcripts to the script model so it avoids repeating stories and connects today's headlines to running themes. Change how many episodes are considered via `CONTEXT_WINDOW_EPISODES` in `config.py` (set to `0` to disable).
+
+This requires the workflow's `permissions: contents: write` (already set in the `.yml`) so it can push the archive commit.
+
+---
+
 ## Customization
 
 You can easily tweak this script for your specific needs by editing 'daily_brief.py':
