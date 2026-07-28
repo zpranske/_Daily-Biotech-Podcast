@@ -1,7 +1,7 @@
 name: Daily Biotech Podcast
 on:
   schedule:
-    - cron: '0 11 * * 2,5'
+    - cron: '0 6 * * 2,5'
   workflow_dispatch: # Allows you to run it manually to test
 
 # Needed so the workflow can commit the transcript archive back to the repo.
