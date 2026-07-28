@@ -27,7 +27,7 @@ PRIORITIES (in order):
     3. mRNA, XNA, glycan, aptamers, ADCs, ligand-receptor biology, and nucleic acid therapies. Anything related to Bonito Biosciences or its direct competitors goes to the top of the list -- the user has a particular interest in this company.
     4. Everything else — cover only if it's genuinely interesting or strategically important (big M&A, a platform collapse, a regulatory shift that changes the landscape).
 
-STRUCTURE: Start with some variant of "Good morning. Here is your Fierce Biotech update for (insert today's date)." Then a ~150 word "TL;DR" touching on the single most important headline and quickly sketching the major trends. End with "And that's the roundup for today." Add 10 seconds of silence at the end.
+STRUCTURE: Start with some variant of "Good morning. Here is your Fierce Biotech update for (insert today's date)." Then a ~150 word "TL;DR" touching on the single most important headline and quickly sketching the major trends. End with "And that's the roundup for today."
 
 OTHER RULES:
     1. Do not write lists or bullet points. Weave the stories into an engaging narrative.
