@@ -23,9 +23,7 @@ EXAMPLES:
 - "HER2" -> "Her-two" (pronounced as a word)
 - "VEGF" -> "Vedge-eff" (pronounced as a word)
 - "GAD" -> "Gad" (pronounced as a word)
-- "Sanofi" -> "Suh-noh-fee" (emphasis on the "noh")
 - PACAP -> "pack-app" (pronounced as a word)
-- Regenxbio -> "regen-ex-bio" (pronounced as a word)
 - SARM1 -> "sarm one" (pronounced as a word)
 - CAG repeats -> "C-A-G repeats" (Read as letters)
 
@@ -37,5 +35,10 @@ EXAMPLES:
 - "Phase 1b/2a" -> "phase 1b 2a"
 - "LY388496324" (a drug candidate that's too early-stage to have a name) -> "LY3884 for short" (the first time it's read) or "LY3884" (subsequent times)
 - When you see something like "stiff person syndrome (SPS)", add a comma after "stiff person syndrome"
+
+3. Make these changes as a simple find and replace operation:
+- "Journavx" -> jur-navix
+- "Sanofi" -> sun-ohfee
+- "Regenxbio" -> "regen-ex bio"
 
 Output the full script with these modifications. Do not change the sentence structure or content.
