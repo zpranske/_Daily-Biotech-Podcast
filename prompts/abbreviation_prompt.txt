@@ -38,7 +38,7 @@ EXAMPLES:
 
 3. Make these changes as a simple find and replace operation:
 - "Journavx" -> "jurNAVVix" 
-- "Sanofi" -> sin-nohhfee
+- "Sanofi" -> "si'nofee"
 - "Regenxbio" -> "regen-ex bio"
 
 Output the full script with these modifications. Do not change the sentence structure or content.
