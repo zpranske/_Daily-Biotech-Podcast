@@ -41,5 +41,6 @@ EXAMPLES:
 - "Sanofi" -> "/ˌsəˈnoʊ,fi/"
 - "Regenxbio" -> "/rəˈdʒɛnɛksbaɪoʊ/"
 - "Eisai" -> "/ˈeɪzaɪ/"
+- "iRegene" -> "/ˈaɪrɛdʒiːn/"
 
 Output the full script with these modifications. Do not change the sentence structure or content.
