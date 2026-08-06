@@ -37,8 +37,9 @@ EXAMPLES:
 - When you see something like "stiff person syndrome (SPS)", add a comma after "stiff person syndrome"
 
 3. Make these changes as a simple find and replace operation:
-- "Journavx" -> "jurNAVVix" 
+- "Journavx" -> "/ˌdʒʌrˈnævɪks/"
 - "Sanofi" -> "/ˌsəˈnoʊ,fi/"
-- "Regenxbio" -> "regen-ex bio"
+- "Regenxbio" -> "/rəˈdʒɛnɛksbaɪoʊ/"
+- "Eisai" -> "/ˈeɪzaɪ/"
 
 Output the full script with these modifications. Do not change the sentence structure or content.
