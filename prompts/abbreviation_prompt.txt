@@ -26,6 +26,8 @@ EXAMPLES:
 - PACAP -> "pack-app" (pronounced as a word)
 - SARM1 -> "sarm one" (pronounced as a word)
 - CAG repeats -> "C-A-G repeats" (Read as letters)
+- TMPRSS -> "tempress"
+- DUX4 -> "ducks-four"
 
 2. Also modify certain syntactical abbreviations as needed, using good judgment to determine what will read most naturally.
 
