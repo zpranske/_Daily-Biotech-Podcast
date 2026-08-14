@@ -28,6 +28,8 @@ EXAMPLES:
 - CAG repeats -> "C-A-G repeats" (Read as letters)
 - TMPRSS -> "tempress"
 - DUX4 -> "ducks-four"
+- BAFF -> "baff" (read as a word)
+- APRIL -> "april" (read as a word)
 
 2. Also modify certain syntactical abbreviations as needed, using good judgment to determine what will read most naturally.
 
