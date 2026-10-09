@@ -24,6 +24,10 @@ PROMPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "prompts"
 # past transcripts are already on disk before we generate a new one.
 ARCHIVE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "archive")
 
+# Beta-testing mode: write and send the script only. Skips the phonetic rewrite,
+# TTS, and archive, so test runs don't affect the context window or dedupe.
+SCRIPT_ONLY = os.environ.get("SCRIPT_ONLY", "").lower() in ("1", "true", "yes")
+
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 
@@ -247,23 +251,25 @@ def send_via_telegram(audio_file, text_file):
     
     print(f"Attempting to send to Chat ID: {TELEGRAM_CHAT_ID}")
     
-    # 1. Send Audio
-    try:
-        with open(audio_file, 'rb') as audio:
-            payload = {'chat_id': TELEGRAM_CHAT_ID, 'title': f"Biotech Update {datetime.date.today()}"}
-            files = {'audio': audio}
-            r = requests.post(url_audio, data=payload, files=files, timeout=30)
-            if r.status_code == 200:
-                print("✅ Audio sent successfully.")
-            else:
-                print(f"❌ Audio failed: {r.text}")
-    except Exception as e:
-        print(f"❌ Error sending audio: {e}")
+    # 1. Send Audio (skipped in SCRIPT_ONLY mode)
+    if audio_file:
+        try:
+            with open(audio_file, 'rb') as audio:
+                payload = {'chat_id': TELEGRAM_CHAT_ID, 'title': f"Biotech Update {datetime.date.today()}"}
+                files = {'audio': audio}
+                r = requests.post(url_audio, data=payload, files=files, timeout=30)
+                if r.status_code == 200:
+                    print("✅ Audio sent successfully.")
+                else:
+                    print(f"❌ Audio failed: {r.text}")
+        except Exception as e:
+            print(f"❌ Error sending audio: {e}")
 
     # 2. Send Transcript
     try:
         with open(text_file, 'rb') as doc:
-            payload = {'chat_id': TELEGRAM_CHAT_ID, 'caption': f"Transcript {datetime.date.today()}"}
+            caption = f"{'[BETA] ' if SCRIPT_ONLY else ''}Transcript {datetime.date.today()}"
+            payload = {'chat_id': TELEGRAM_CHAT_ID, 'caption': caption}
             files = {'document': doc}
             r = requests.post(url_doc, data=payload, files=files, timeout=30)
             if r.status_code == 200:
@@ -316,6 +322,12 @@ def main():
     with open(transcript_filename, "w", encoding="utf-8") as f:
         f.write(clean_script)
     print("Clean transcript saved.")
+
+    if SCRIPT_ONLY:
+        print("SCRIPT_ONLY mode: skipping archive, TTS, and audio.")
+        send_via_telegram(None, transcript_filename)
+        print("Done!")
+        return
 
     # 3b. Write the permanent archive record (committed by the workflow).
     today = datetime.date.today().isoformat()

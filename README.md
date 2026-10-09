@@ -57,6 +57,14 @@ This requires the workflow's `permissions: contents: write` (already set in the 
 
 ---
 
+## Script-Only (Beta) Mode
+
+To test prompt or script changes without paying for TTS, go to **Actions → Daily Biotech Podcast → Run workflow** and tick **"Beta test: generate the script only"**. The transcript is sent to Telegram with a `[BETA]` caption; the phonetic rewrite, audio, and archive commit are skipped so test runs don't affect the context window. Scheduled runs are unaffected.
+
+Locally: set `SCRIPT_ONLY=1` before running `python daily_brief.py`.
+
+---
+
 ## Customization
 
 You can easily tweak this script for your specific needs by editing 'daily_brief.py':
