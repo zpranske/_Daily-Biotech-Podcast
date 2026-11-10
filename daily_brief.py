@@ -2,6 +2,7 @@ import feedparser
 import requests
 from bs4 import BeautifulSoup
 from openai import OpenAI
+import anthropic
 import os
 import datetime
 import re
@@ -9,6 +10,8 @@ import re
 import config
 
 # --- CONFIGURATION ---
+# Script generation runs on Claude (Anthropic); TTS + abbreviation still use OpenAI.
+ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
 TELEGRAM_CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
@@ -29,6 +32,7 @@ ARCHIVE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "archive"
 SCRIPT_ONLY = os.environ.get("SCRIPT_ONLY", "").lower() in ("1", "true", "yes")
 
 client = OpenAI(api_key=OPENAI_API_KEY)
+anthropic_client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 
 def load_prompt(filename):
@@ -156,12 +160,15 @@ def generate_clean_script(raw_text, recent_context=""):
 
     neuro_prompt = load_prompt("neuro_prompt.txt")
 
-    messages = [{"role": "system", "content": neuro_prompt}]
+    # Claude takes instructions in a top-level `system` parameter (a list of
+    # text blocks), not as "system" messages in the conversation. The persona
+    # prompt goes first; the recent-coverage context (if any) follows it.
+    system_blocks = [{"type": "text", "text": neuro_prompt}]
 
     if recent_context:
-        messages.append({
-            "role": "system",
-            "content": (
+        system_blocks.append({
+            "type": "text",
+            "text": (
                 "RECENT COVERAGE CONTEXT — below are the transcripts of the last "
                 "few episodes, oldest first. The listener has already heard these.\n"
                 "Use them to:\n"
@@ -177,16 +184,32 @@ def generate_clean_script(raw_text, recent_context=""):
             ),
         })
 
-    messages.append({
-        "role": "user",
-        "content": f"Here is the raw text from today's top articles:\n\n{raw_text}",
-    })
-
-    response = client.chat.completions.create(
+    response = anthropic_client.beta.messages.create(
         model=config.SCRIPT_MODEL,
-        messages=messages,
+        max_tokens=8000,  # a 1250-1750 word script is well under this
+        output_config={"effort": config.SCRIPT_EFFORT},
+        # If a safety classifier ever declines, transparently retry on another
+        # Claude model instead of failing the run. Remove `betas`/`fallbacks`
+        # (and switch to anthropic_client.messages.create) if you don't want it.
+        betas=["server-side-fallback-2026-07-01"],
+        fallbacks="default",
+        system=system_blocks,
+        messages=[
+            {
+                "role": "user",
+                "content": f"Here is the raw text from today's top articles:\n\n{raw_text}",
+            }
+        ],
     )
-    return response.choices[0].message.content
+
+    if response.stop_reason == "refusal":
+        detail = getattr(response.stop_details, "explanation", "") or ""
+        print(f"⚠️  Claude declined to generate the script. {detail}")
+        return "The script could not be generated today (model declined the request)."
+
+    # The response is a list of content blocks; grab the text ones (adaptive
+    # thinking may also emit empty `thinking` blocks, which we skip).
+    return "".join(block.text for block in response.content if block.type == "text")
 
 def optimize_script_for_audio(script_text):
     """Rewrites acronyms phonetically so TTS pronounces them correctly."""
