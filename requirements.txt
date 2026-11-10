@@ -1,4 +1,5 @@
 openai
+anthropic
 requests
 beautifulsoup4
 feedparser
