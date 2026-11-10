@@ -186,7 +186,8 @@ def generate_clean_script(raw_text, recent_context=""):
 
     response = anthropic_client.beta.messages.create(
         model=config.SCRIPT_MODEL,
-        max_tokens=8000,  # a 1250-1750 word script is well under this
+        # Must cover reasoning tokens + the script — see config.SCRIPT_MAX_TOKENS.
+        max_tokens=config.SCRIPT_MAX_TOKENS,
         output_config={"effort": config.SCRIPT_EFFORT},
         # If a safety classifier ever declines, transparently retry on another
         # Claude model instead of failing the run. Remove `betas`/`fallbacks`
@@ -202,6 +203,13 @@ def generate_clean_script(raw_text, recent_context=""):
         ],
     )
 
+    # Log usage + stop reason so cost and truncation are visible in the run log.
+    usage = response.usage
+    print(
+        f"Claude usage — stop_reason={response.stop_reason}, "
+        f"input={usage.input_tokens} tok, output={usage.output_tokens} tok"
+    )
+
     if response.stop_reason == "refusal":
         detail = getattr(response.stop_details, "explanation", "") or ""
         print(f"⚠️  Claude declined to generate the script. {detail}")
@@ -209,7 +217,24 @@ def generate_clean_script(raw_text, recent_context=""):
 
     # The response is a list of content blocks; grab the text ones (adaptive
     # thinking may also emit empty `thinking` blocks, which we skip).
-    return "".join(block.text for block in response.content if block.type == "text")
+    script = "".join(block.text for block in response.content if block.type == "text")
+
+    # Guard: if the response was truncated mid-reasoning (stop_reason "max_tokens")
+    # there may be no visible script text. Don't silently write/send an empty file.
+    if not script.strip():
+        print(
+            "⚠️  Claude returned no script text "
+            f"(stop_reason={response.stop_reason}). "
+            "Raise config.SCRIPT_MAX_TOKENS or lower config.SCRIPT_EFFORT."
+        )
+        return (
+            "Script generation returned no text this run "
+            f"(stop_reason={response.stop_reason}). "
+            "This usually means max_tokens was exhausted by reasoning — "
+            "raise SCRIPT_MAX_TOKENS or lower SCRIPT_EFFORT."
+        )
+
+    return script
 
 def optimize_script_for_audio(script_text):
     """Rewrites acronyms phonetically so TTS pronounces them correctly."""
