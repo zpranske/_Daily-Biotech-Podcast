@@ -11,7 +11,7 @@ SCRIPT_MODEL = "claude-sonnet-5-5"
 # Reasoning effort for the script model: low | medium | high | xhigh | max.
 # Higher effort = more thorough analysis (and more cost/latency). "medium" is a
 # good balance for creative writing; bump to "high" if you want sharper takes.
-SCRIPT_EFFORT = "medium"
+SCRIPT_EFFORT = "high"
 
 # Model used to rewrite acronyms/abbreviations phonetically for TTS (optimize_script_for_audio).
 # Still on OpenAI for now — part of the TTS pipeline, which we haven't migrated yet.
