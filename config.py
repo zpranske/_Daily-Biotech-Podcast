@@ -11,7 +11,20 @@ SCRIPT_MODEL = "claude-sonnet-5-5"
 # Reasoning effort for the script model: low | medium | high | xhigh | max.
 # Higher effort = more thorough analysis (and more cost/latency). "medium" is a
 # good balance for creative writing; bump to "high" if you want sharper takes.
-SCRIPT_EFFORT = "high"
+SCRIPT_EFFORT = "medium"
+
+# Max tokens for the script response. IMPORTANT: on Claude this ceiling must
+# cover BOTH the model's (billed, usually hidden) reasoning AND the visible
+# script. A 1250-1750 word script is only ~2500 tokens, but higher SCRIPT_EFFORT
+# spends more reasoning tokens — if this is too low, the response is truncated
+# mid-reasoning and comes back with no script text at all. 12000 leaves ample
+# headroom at "medium" effort. Lower effort is the main lever to cut cost here.
+SCRIPT_MAX_TOKENS = 12000
+
+# Model used to condense each day's script into a ~100-word "context_summary"
+# (generate_context_summary). A trivial task, so we use the cheapest Claude model
+# with thinking off — these summaries, not full transcripts, feed the context window.
+SUMMARY_MODEL = "claude-haiku-5-5"
 
 # Model used to rewrite acronyms/abbreviations phonetically for TTS (optimize_script_for_audio).
 # Still on OpenAI for now — part of the TTS pipeline, which we haven't migrated yet.
@@ -23,7 +36,8 @@ TTS_MODEL = "gpt-4o-mini-tts"
 # Voice used for the TTS audio.
 TTS_VOICE = "alloy"
 
-# How many recent episodes to load as "context" before writing a new script.
-# These are fed to the script model so it can avoid repeating stories and
-# connect today's news to running themes. Set to 0 to disable.
-CONTEXT_WINDOW_EPISODES = 24
+# How many recent daily summaries to load as "context" before writing a new
+# script. These condensed summaries (not full transcripts) are fed to the script
+# model so it can avoid repeating stories and connect today's news to running
+# themes. Set to 0 to disable.
+CONTEXT_WINDOW_EPISODES = 5

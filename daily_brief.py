@@ -22,10 +22,15 @@ RSS_URL = "https://www.fiercebiotech.com/rss/biotech/xml"
 # without touching this script.
 PROMPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "prompts")
 
-# Permanent, git-committed archive of every generated episode. The workflow
-# checks the repo out fresh each run, so this doubles as the "context window":
-# past transcripts are already on disk before we generate a new one.
+# Permanent, git-committed archive of every generated episode (full transcripts).
+# Kept as a human-readable record; it is NO LONGER the context window.
 ARCHIVE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "archive")
+
+# Git-committed folder of condensed ~100-word "context_summary" notes, one per
+# episode. The workflow checks the repo out fresh each run, so these summaries
+# are already on disk and act as the lightweight "context window" fed to the
+# script model — far cheaper than re-feeding whole transcripts.
+SUMMARIES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "summaries")
 
 # Beta-testing mode: write and send the script only. Skips the phonetic rewrite,
 # TTS, and archive, so test runs don't affect the context window or dedupe.
@@ -41,28 +46,28 @@ def load_prompt(filename):
         return f.read()
 
 
-def load_recent_archive(n=config.CONTEXT_WINDOW_EPISODES):
-    """Reads the most recent n archived episodes for context.
+def load_recent_summaries(n=config.CONTEXT_WINDOW_EPISODES):
+    """Reads the most recent n daily context summaries.
 
-    Returns a list of dicts (oldest first): {"date", "sources", "transcript"}.
-    A missing/empty archive just yields an empty list, so the very first run
-    works fine.
+    Returns a list of dicts (oldest first): {"date", "sources", "summary"}.
+    A missing/empty summaries folder just yields an empty list, so the first
+    runs after switching over (before any summaries exist) work fine.
     """
-    if n <= 0 or not os.path.isdir(ARCHIVE_DIR):
+    if n <= 0 or not os.path.isdir(SUMMARIES_DIR):
         return []
 
-    files = sorted(f for f in os.listdir(ARCHIVE_DIR) if f.endswith(".md"))
+    files = sorted(f for f in os.listdir(SUMMARIES_DIR) if f.endswith(".md"))
     episodes = []
     for filename in files[-n:]:
-        with open(os.path.join(ARCHIVE_DIR, filename), "r", encoding="utf-8") as f:
+        with open(os.path.join(SUMMARIES_DIR, filename), "r", encoding="utf-8") as f:
             content = f.read()
 
-        # Format written by save_archive(): a "## Sources" block of
-        # "- Title | URL" lines, then a "## Transcript" block.
-        if "## Transcript" in content:
-            header, transcript = content.split("## Transcript", 1)
+        # Format written by save_context_summary(): a "## Sources" block of
+        # "- Title | URL" lines, then a "## Summary" block.
+        if "## Summary" in content:
+            header, summary = content.split("## Summary", 1)
         else:
-            header, transcript = content, ""
+            header, summary = content, ""
 
         sources = []
         for line in header.splitlines():
@@ -74,7 +79,7 @@ def load_recent_archive(n=config.CONTEXT_WINDOW_EPISODES):
         episodes.append({
             "date": filename[:-3],  # strip ".md"
             "sources": sources,
-            "transcript": transcript.strip(),
+            "summary": summary.strip(),
         })
 
     return episodes
@@ -90,7 +95,7 @@ def build_recent_context(episodes):
     if not episodes:
         return ""
     return "\n\n".join(
-        f"--- EPISODE {ep['date']} ---\n{ep['transcript']}" for ep in episodes
+        f"--- EPISODE {ep['date']} ---\n{ep['summary']}" for ep in episodes
     )
 
 
@@ -108,6 +113,24 @@ def save_archive(date, sources, transcript):
     with open(path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
     print(f"Archived episode to {path}")
+    return path
+
+
+def save_context_summary(date, sources, summary):
+    """Writes the condensed context_summary record for one episode.
+
+    Same shape as save_archive (a "## Sources" block, then a "## Summary"
+    block), so load_recent_summaries can parse it and still dedupe by URL.
+    """
+    os.makedirs(SUMMARIES_DIR, exist_ok=True)
+    lines = [f"# Context Summary — {date}", "", "## Sources", ""]
+    lines += [f"- {title} | {url}" for title, url in sources]
+    lines += ["", "## Summary", "", summary, ""]
+
+    path = os.path.join(SUMMARIES_DIR, f"{date}.md")
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))
+    print(f"Saved context summary to {path}")
     return path
 
 def get_latest_articles_from_rss():
@@ -169,7 +192,7 @@ def generate_clean_script(raw_text, recent_context=""):
         system_blocks.append({
             "type": "text",
             "text": (
-                "RECENT COVERAGE CONTEXT — below are the transcripts of the last "
+                "RECENT COVERAGE CONTEXT — below are condensed summaries of the last "
                 "few episodes, oldest first. The listener has already heard these.\n"
                 "Use them to:\n"
                 "1. Avoid repeating stories. If today's articles overlap with something "
@@ -186,7 +209,8 @@ def generate_clean_script(raw_text, recent_context=""):
 
     response = anthropic_client.beta.messages.create(
         model=config.SCRIPT_MODEL,
-        max_tokens=8000,  # a 1250-1750 word script is well under this
+        # Must cover reasoning tokens + the script — see config.SCRIPT_MAX_TOKENS.
+        max_tokens=config.SCRIPT_MAX_TOKENS,
         output_config={"effort": config.SCRIPT_EFFORT},
         # If a safety classifier ever declines, transparently retry on another
         # Claude model instead of failing the run. Remove `betas`/`fallbacks`
@@ -202,6 +226,13 @@ def generate_clean_script(raw_text, recent_context=""):
         ],
     )
 
+    # Log usage + stop reason so cost and truncation are visible in the run log.
+    usage = response.usage
+    print(
+        f"Claude usage — stop_reason={response.stop_reason}, "
+        f"input={usage.input_tokens} tok, output={usage.output_tokens} tok"
+    )
+
     if response.stop_reason == "refusal":
         detail = getattr(response.stop_details, "explanation", "") or ""
         print(f"⚠️  Claude declined to generate the script. {detail}")
@@ -209,7 +240,48 @@ def generate_clean_script(raw_text, recent_context=""):
 
     # The response is a list of content blocks; grab the text ones (adaptive
     # thinking may also emit empty `thinking` blocks, which we skip).
-    return "".join(block.text for block in response.content if block.type == "text")
+    script = "".join(block.text for block in response.content if block.type == "text")
+
+    # Guard: if the response was truncated mid-reasoning (stop_reason "max_tokens")
+    # there may be no visible script text. Don't silently write/send an empty file.
+    if not script.strip():
+        print(
+            "⚠️  Claude returned no script text "
+            f"(stop_reason={response.stop_reason}). "
+            "Raise config.SCRIPT_MAX_TOKENS or lower config.SCRIPT_EFFORT."
+        )
+        return (
+            "Script generation returned no text this run "
+            f"(stop_reason={response.stop_reason}). "
+            "This usually means max_tokens was exhausted by reasoning — "
+            "raise SCRIPT_MAX_TOKENS or lower SCRIPT_EFFORT."
+        )
+
+    return script
+
+
+def generate_context_summary(clean_script):
+    """Condenses ONE day's script into a ~100-word topic summary.
+
+    Saved to SUMMARIES_DIR and used as lightweight 'recent coverage' context on
+    future runs, instead of re-feeding whole transcripts. Runs on a cheap Claude
+    model with thinking off — it's a trivial extraction task.
+    """
+    if not clean_script.strip():
+        return ""
+
+    summary_prompt = load_prompt("summary_prompt.txt")
+
+    response = anthropic_client.messages.create(
+        model=config.SUMMARY_MODEL,
+        max_tokens=512,
+        thinking={"type": "disabled"},  # trivial task — keep it cheap + fast
+        output_config={"effort": "low"},
+        system=summary_prompt,
+        messages=[{"role": "user", "content": clean_script}],
+    )
+
+    return "".join(block.text for block in response.content if block.type == "text").strip()
 
 def optimize_script_for_audio(script_text):
     """Rewrites acronyms phonetically so TTS pronounces them correctly."""
@@ -309,9 +381,9 @@ def main():
         print("No articles found. Exiting.")
         return
 
-    # 1b. Load recent episodes — used both as generation context and to skip
+    # 1b. Load recent summaries — used both as generation context and to skip
     #     articles we've already covered.
-    recent_episodes = load_recent_archive()
+    recent_episodes = load_recent_summaries()
     seen_urls = recent_source_urls(recent_episodes)
     if seen_urls:
         before = len(articles)
@@ -355,6 +427,14 @@ def main():
     # 3b. Write the permanent archive record (committed by the workflow).
     today = datetime.date.today().isoformat()
     save_archive(today, scraped_sources, clean_script)
+
+    # 3c. Condense today's script into a context_summary for future runs.
+    print("Generating context summary...")
+    summary = generate_context_summary(clean_script)
+    if summary:
+        save_context_summary(today, scraped_sources, summary)
+    else:
+        print("⚠️  Empty context summary; skipping save.")
 
     # 4. Generate PHONETIC Script (For Robots)
     audio_script = optimize_script_for_audio(clean_script)
